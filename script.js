@@ -2,29 +2,31 @@ const canvas = document.getElementById("viewport");
 const ctx = canvas.getContext("2d");
 
 // PHYSICS
-const GROUND_Y = 240;
-const GRAVITY = 0.7;
-const JUMP_FORCE = -12;
+let GROUND_Y = 0;
+const GRAVITY = 0.8;
+const JUMP_FORCE = -18;
 
 // GAME
 let gameSpeed = 6;
 let score = 0;
 let gameOver = false;
 let obstacleTimer = 0;
-let obstacleInterval = 90; // frame
-let obstMinInterval = 30; // frame
-let obstMaxInterval = 60; // frame
+let obstacleInterval = 150; // frame
+let obstMinInterval = 60; // frame
+let obstMaxInterval = 120; // frame
 
 const player = {
     x: 80,
-    y: GROUND_Y - 50,
-    w: 36,
-    h: 50,
+    y: GROUND_Y - 100,
+    w: 72,
+    h: 100,
     vy: 0,
     grounded: true
 };
 
 const obstacles = [];
+
+
 
 // PREFABS + SPRITES
 let obstaclePrefabs = [];
@@ -78,9 +80,43 @@ async function loadObstaclePrefabs() {
     }
 }
 
-function getRandomPrefab() {
-    const i = Math.floor(Math.random() * obstaclePrefabs.length);
-    return obstaclePrefabs[i];
+
+
+function update() {
+    if (gameOver) return;
+
+    // Player physics
+    player.vy += GRAVITY;
+    player.y += player.vy;
+
+    player.grounded = checkPlayerGrounded();
+
+    // Obstacles
+    obstacleTimerUpdate();
+    obstacleMove();
+
+    // Difficulty scaling
+    score += 0.1;
+    gameSpeed += score / 1000000;
+}
+
+function checkPlayerGrounded() {
+    if (player.y >= GROUND_Y - player.h) {
+        player.y = GROUND_Y - player.h;
+        player.vy = 0;
+        return true
+    } else {
+        return false;
+    }
+}
+
+function obstacleTimerUpdate() {
+    obstacleTimer++;
+    if (obstacleTimer >= obstacleInterval) {
+        spawnObstacle();
+        obstacleTimer = 0;
+        obstacleInterval = obstMinInterval + (Math.floor(Math.random() * obstMaxInterval));
+    }
 }
 
 function spawnObstacle() {
@@ -98,6 +134,27 @@ function spawnObstacle() {
     });
 }
 
+function getRandomPrefab() {
+    const i = Math.floor(Math.random() * obstaclePrefabs.length);
+    return obstaclePrefabs[i];
+}
+
+function obstacleMove() {
+    obstacles.forEach(ob => {
+
+        ob.x -= gameSpeed;
+        if (rectsCollide(player, ob)) {
+            callGameOver();
+        }
+
+        if (ob.x + ob.w < 0) {
+            obstacles.splice(obstacles.indexOf(ob), 1);
+        }
+    });
+}
+
+function callGameOver() { gameOver = true; }
+
 function rectsCollide(a, b) {
     return (
         a.x < b.x + b.w &&
@@ -107,63 +164,54 @@ function rectsCollide(a, b) {
     );
 }
 
-function update() {
-    if (gameOver) return;
+// to resize the resolution of the canvas to not distort the game view
+function resizeCanvas() {
+    // get the css display size
+    const displayWidth = Math.floor(canvas.clientWidth);
+    const displayHeight = Math.floor(canvas.clientHeight);
 
-    // Player physics
-    player.vy += GRAVITY;
-    player.y += player.vy;
+    // update the internal resolution only iof needed
+    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
+    }
 
-    if (player.y >= GROUND_Y - player.h) {
+    GROUND_Y = Math.floor(canvas.height * 0.8);
+
+    if (player.grounded) {
         player.y = GROUND_Y - player.h;
-        player.vy = 0;
-        player.grounded = true;
-    } else {
-        player.grounded = false;
     }
-
-    // Obstacles
-    obstacleTimer++;
-    if (obstacleTimer >= obstacleInterval) {
-        spawnObstacle();
-        obstacleTimer = 0;
-        obstacleInterval = obstMinInterval + (Math.floor(Math.random() * obstMaxInterval));
-    }
-
-    for (let i = obstacles.length - 1; i >= 0; i--) {
-        const ob = obstacles[i];
-        ob.x -= gameSpeed;
-
-        if (rectsCollide(player, ob)) {
-            gameOver = true;
-        }
-
-        if (ob.x + ob.w < 0) {
-            obstacles.splice(i, 1);
-        }
-    }
-
-    // Difficulty scaling
-    score += 0.1;
-    gameSpeed += score / 100000;
 }
 
 function draw() {
+    // clear the viewport 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Ground
+    drawGround();
+    drawPlayer();
+    drawObstacles();
+    drawScore();
+
+    if (gameOver) {
+        drawGameOverOverlay();
+    }
+}
+
+function drawGround() {
     ctx.beginPath();
     ctx.moveTo(0, GROUND_Y);
     ctx.lineTo(canvas.width, GROUND_Y);
     ctx.strokeStyle = "#333";
     ctx.lineWidth = 2;
     ctx.stroke();
+}
 
-    // Player
+function drawPlayer() {
     ctx.fillStyle = "#04ff00ff";
     ctx.fillRect(player.x, player.y, player.w, player.h);
+}
 
-    // Obstacles
+function drawObstacles() {
     obstacles.forEach(ob => {
         const img = ob.sprite ? spriteCache[ob.sprite] : null;
         if (img) {
@@ -173,34 +221,37 @@ function draw() {
             ctx.fillRect(ob.x, ob.y, ob.w, ob.h);
         }
     });
+}
 
-    // Score
+function drawScore() {
     ctx.fillStyle = "#111";
     ctx.font = "20px monospace";
     ctx.fillText(`Score: ${Math.floor(score)}`, 20, 30);
+}
 
-    if (gameOver) {
-        ctx.fillStyle = "rgba(0,0,0,0.6)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "white";
-        ctx.font = "32px sans-serif";
-        ctx.fillText("Game Over", canvas.width / 2 - 90, 130);
-        ctx.font = "20px sans-serif";
-        ctx.fillText("Premi R per ricominciare", canvas.width / 2 - 120, 170);
-    }
+function drawGameOverOverlay() {
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    ctx.font = "32px sans-serif";
+    ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2 - 20);
+
+    ctx.font = "20px sans-serif";
+    ctx.fillText("Press R to restart", canvas.width / 2, canvas.height / 2 + 20);
+
+
+    ctx.textAlign = "start";
+    ctx.textBaseline = "alphabetic";
 }
 
 function loop() {
     update();
     draw();
     requestAnimationFrame(loop);
-}
-
-function jump() {
-    if (player.grounded && !gameOver) {
-        player.vy = JUMP_FORCE;
-        player.grounded = false;
-    }
 }
 
 function resetGame() {
@@ -222,9 +273,19 @@ window.addEventListener("keydown", (e) => {
 });
 
 window.addEventListener("pointerdown", () => jump());
+window.addEventListener("resize", resizeCanvas);
+
+function jump() {
+    if (player.grounded && !gameOver) {
+        player.vy = JUMP_FORCE;
+        player.grounded = false;
+    }
+}
+
 
 // startafter loading prefabs
 (async function startGame() {
     await loadObstaclePrefabs();
+    resizeCanvas();
     loop();
 })();

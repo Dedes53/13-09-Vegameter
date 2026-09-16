@@ -1,13 +1,43 @@
+html,
 body {
     margin: 0;
-    display: grid;
-    place-items: center;
-    height: 100vh;
+    height: 100%;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     background: #f7f7f7;
     font-family: sans-serif;
 }
 
-canvas {
+#viewport {
+    width: 80vw;
+    height: 60vh;
+    max-width: 1400px;
+    max-height: 500px;
     border: 2px solid #222;
     background: rgba(0, 174, 255, 0.827);
+    display: block;
+}
+
+.commands {
+    display: flex;
+    gap: 2rem;
+    font-size: 2rem;
+    margin: 0
+}
+
+span {
+    font-weight: bold;
+}
+
+
+@media (max-width: 768px) {
+    #viewport {
+        width: 95vw;
+        height: 35vh;
+    }
 }
