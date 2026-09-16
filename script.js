@@ -10,6 +10,7 @@ const JUMP_FORCE = -18;
 let gameSpeed = 6;
 let score = 0;
 let gameOver = false;
+let isPaused = false;
 let obstacleTimer = 0;
 let obstacleInterval = 150; // frame
 let obstMinInterval = 60; // frame
@@ -83,7 +84,7 @@ async function loadObstaclePrefabs() {
 
 
 function update() {
-    if (gameOver) return;
+    if (gameOver || isPaused) return;
 
     // Player physics
     player.vy += GRAVITY;
@@ -192,6 +193,10 @@ function draw() {
     drawObstacles();
     drawScore();
 
+    if (isPaused && !gameOver) {
+        drawPauseOverlay();
+    }
+
     if (gameOver) {
         drawGameOverOverlay();
     }
@@ -248,6 +253,24 @@ function drawGameOverOverlay() {
     ctx.textBaseline = "alphabetic";
 }
 
+function drawPauseOverlay() {
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "28px sans-serif";
+    ctx.fillText("PAUSED", canvas.width / 2, canvas.height / 2);
+    ctx.font = "18px sans-serif";
+    ctx.fillText("Premi P per continuare", canvas.width / 2, canvas.height / 2 + 30);
+
+    ctx.textAlign = "start";
+    ctx.textBaseline = "alphabetic";
+}
+
+
+
 function loop() {
     update();
     draw();
@@ -257,6 +280,7 @@ function loop() {
 function resetGame() {
     score = 0;
     gameOver = false;
+    isPaused = false;
     obstacles.length = 0;
     obstacleTimer = 0;
     obstacleInterval = 90;
@@ -269,7 +293,7 @@ function resetGame() {
 window.addEventListener("keydown", (e) => {
     if (e.code === "Space" || e.code === "ArrowUp") jump();
     if (e.code === "KeyR" && gameOver) resetGame();
-    // TODO pause the game with P key
+    if (e.code === "KeyP") pauseGame();
 });
 
 window.addEventListener("pointerdown", () => jump());
@@ -282,6 +306,10 @@ function jump() {
     }
 }
 
+function pauseGame() {
+    if (gameOver) return;
+    isPaused = !isPaused;
+}
 
 // startafter loading prefabs
 (async function startGame() {
