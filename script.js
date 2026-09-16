@@ -1,17 +1,19 @@
 const canvas = document.getElementById("viewport");
 const ctx = canvas.getContext("2d");
 
-// PHYSICS 
+// PHYSICS
 const GROUND_Y = 240;
 const GRAVITY = 0.7;
 const JUMP_FORCE = -12;
+
 // GAME
 let gameSpeed = 6;
 let score = 0;
 let gameOver = false;
 let obstacleTimer = 0;
 let obstacleInterval = 90; // frame
-
+let obstMinInterval = 30; // frame
+let obstMaxInterval = 60; // frame
 
 const player = {
     x: 80,
@@ -24,14 +26,75 @@ const player = {
 
 const obstacles = [];
 
+// PREFABS + SPRITES
+let obstaclePrefabs = [];
+let prefabsLoaded = false;
+const spriteCache = {};
+
+function loadImage(src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error(`Error loading: ${src}`));
+        img.src = src;
+    });
+}
+
+async function loadObstaclePrefabs() {
+    try {
+        const res = await fetch("./assets/data/obstacles.json");
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status} during the fetch of obstacles.json`);
+        }
+
+        obstaclePrefabs = await res.json();
+
+        if (!Array.isArray(obstaclePrefabs) || obstaclePrefabs.length === 0) {
+            throw new Error("obstacles.json not valid or empty");
+        }
+
+        // preload sprite images
+        const uniqueSprites = [...new Set(
+            obstaclePrefabs.map(p => p.sprite).filter(Boolean)
+        )];
+
+        await Promise.all(
+            uniqueSprites.map(async (src) => {
+                try {
+                    spriteCache[src] = await loadImage(src);
+                } catch (e) {
+                    console.warn(e.message);
+                }
+            })
+        );
+
+        prefabsLoaded = true;
+    } catch (error) {
+        console.error("Failed to load obstacle prefabs:", error);
+
+        // fallback to let the game run 
+        obstaclePrefabs = [{ id: "fallback", w: 25, h: 40, sprite: null }];
+        prefabsLoaded = true;
+    }
+}
+
+function getRandomPrefab() {
+    const i = Math.floor(Math.random() * obstaclePrefabs.length);
+    return obstaclePrefabs[i];
+}
+
 function spawnObstacle() {
-    const h = 30 + Math.random() * 30;
-    const w = 20 + Math.random() * 20;
+    if (!prefabsLoaded || obstaclePrefabs.length === 0) return;
+
+    const prefab = getRandomPrefab();
+
     obstacles.push({
+        type: prefab.id,
         x: canvas.width + 20,
-        y: GROUND_Y - h,
-        w,
-        h
+        y: GROUND_Y - prefab.h,
+        w: prefab.w,
+        h: prefab.h,
+        sprite: prefab.sprite || null
     });
 }
 
@@ -64,7 +127,7 @@ function update() {
     if (obstacleTimer >= obstacleInterval) {
         spawnObstacle();
         obstacleTimer = 0;
-        obstacleInterval -= score / 500; // Decrease interval over time
+        obstacleInterval = obstMinInterval + (Math.floor(Math.random() * obstMaxInterval));
     }
 
     for (let i = obstacles.length - 1; i >= 0; i--) {
@@ -76,13 +139,13 @@ function update() {
         }
 
         if (ob.x + ob.w < 0) {
-            obstacles.splice(i, 1); // Remove obstacles off-screen
+            obstacles.splice(i, 1);
         }
     }
 
     // Difficulty scaling
     score += 0.1;
-    gameSpeed += score / 100000; // Increase speed over time
+    gameSpeed += score / 100000;
 }
 
 function draw() {
@@ -101,8 +164,15 @@ function draw() {
     ctx.fillRect(player.x, player.y, player.w, player.h);
 
     // Obstacles
-    ctx.fillStyle = "#ff0000ff";
-    obstacles.forEach(ob => ctx.fillRect(ob.x, ob.y, ob.w, ob.h));
+    obstacles.forEach(ob => {
+        const img = ob.sprite ? spriteCache[ob.sprite] : null;
+        if (img) {
+            ctx.drawImage(img, ob.x, ob.y, ob.w, ob.h);
+        } else {
+            ctx.fillStyle = "#ff0000ff";
+            ctx.fillRect(ob.x, ob.y, ob.w, ob.h);
+        }
+    });
 
     // Score
     ctx.fillStyle = "#111";
@@ -138,6 +208,7 @@ function resetGame() {
     gameOver = false;
     obstacles.length = 0;
     obstacleTimer = 0;
+    obstacleInterval = 90;
     gameSpeed = 6;
     player.y = GROUND_Y - player.h;
     player.vy = 0;
@@ -152,4 +223,8 @@ window.addEventListener("keydown", (e) => {
 
 window.addEventListener("pointerdown", () => jump());
 
-loop();
+// startafter loading prefabs
+(async function startGame() {
+    await loadObstaclePrefabs();
+    loop();
+})();

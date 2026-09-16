@@ -1,0 +1,14 @@
+[
+    {
+        "id": "steak",
+        "w": 36,
+        "h": 50,
+        "sprite": "./assets/img/steak.png"
+    },
+    {
+        "id": "chicken_drumstick",
+        "w": 28,
+        "h": 45,
+        "sprite": "./assets/img/chicken_drumstick.png"
+    }
+]
