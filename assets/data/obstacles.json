@@ -12,5 +12,12 @@
         "h": 90,
         "sprite": "./assets/img/chicken_drumstick.png",
         "type": "enemy"
+    },
+    {
+        "id": "brocolli",
+        "w": 60,
+        "h": 90,
+        "sprite": "./assets/img/brocoli.png",
+        "type": "friend"
     }
 ]
