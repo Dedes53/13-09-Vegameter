@@ -131,7 +131,8 @@ function spawnObstacle() {
         y: GROUND_Y - prefab.h,
         w: prefab.w,
         h: prefab.h,
-        sprite: prefab.sprite || null
+        sprite: prefab.sprite || null,
+        type: prefab.type || "enemy"
     });
 }
 
@@ -144,9 +145,20 @@ function obstacleMove() {
     obstacles.forEach(ob => {
 
         ob.x -= gameSpeed;
+
+
         if (rectsCollide(player, ob)) {
-            callGameOver();
+            if (ob.type === "enemy") {
+                // console.log("I'm the enemy")
+                callGameOver();
+            }
+            if (ob.type === "friend") {
+                // console.log("I'm the friend")
+                score += 10;
+                obstacles.splice(obstacles.indexOf(ob), 1);
+            }
         }
+
 
         if (ob.x + ob.w < 0) {
             obstacles.splice(obstacles.indexOf(ob), 1);
@@ -242,6 +254,7 @@ function drawGameOverOverlay() {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
+    // display here gameover panels 
     ctx.font = "32px sans-serif";
     ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2 - 20);
 
@@ -263,7 +276,7 @@ function drawPauseOverlay() {
     ctx.font = "28px sans-serif";
     ctx.fillText("PAUSED", canvas.width / 2, canvas.height / 2);
     ctx.font = "18px sans-serif";
-    ctx.fillText("Premi P per continuare", canvas.width / 2, canvas.height / 2 + 30);
+    ctx.fillText("Press P to continue", canvas.width / 2, canvas.height / 2 + 30);
 
     ctx.textAlign = "start";
     ctx.textBaseline = "alphabetic";
