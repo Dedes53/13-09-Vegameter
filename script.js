@@ -237,14 +237,17 @@ function draw() {
 }
 
 function drawGround() {
+
+    ctx.fillStyle = "#3fa34d";
+    ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+
     ctx.beginPath();
     ctx.moveTo(0, GROUND_Y);
     ctx.lineTo(canvas.width, GROUND_Y);
-    ctx.strokeStyle = "#333";
+    ctx.strokeStyle = "#2f6f3a";
     ctx.lineWidth = 2;
     ctx.stroke();
 }
-
 function drawPlayer() {
     let currentSprite = null;
 
