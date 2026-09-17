@@ -154,7 +154,8 @@ function obstacleMove() {
             }
             if (ob.type === "friend") {
                 // console.log("I'm the friend")
-                score += 10;
+                score += 100;
+                // friendCount++;
                 obstacles.splice(obstacles.indexOf(ob), 1);
             }
         }
