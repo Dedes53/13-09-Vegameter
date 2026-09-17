@@ -14,6 +14,13 @@
         "type": "enemy"
     },
     {
+        "id": "brocolli",
+        "w": 60,
+        "h": 90,
+        "sprite": "./assets/img/brocoli.png",
+        "type": "friend"
+    },
+    {
         "id": "hotdog",
         "w": 100,
         "h": 50,
