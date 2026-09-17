@@ -40,6 +40,12 @@ const player = {
 
 const obstacles = [];
 
+const clouds = [];
+let cloudTimer = 0;
+let cloudInterval = 50;
+const cloudMinY = 20;
+const cloudMaxYRatio = 0.35;
+
 // PREFABS + SPRITES
 let obstaclePrefabs = [];
 let prefabsLoaded = false;
@@ -100,6 +106,16 @@ async function loadObstaclePrefabs() {
 }
 
 
+function randInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function randFloat(min, max) {
+    return Math.random() * (max - min) + min;
+}
+
+
+
 function update() {
     if (gameOver || isPaused) return;
     // player
@@ -108,6 +124,8 @@ function update() {
     // Obstacles
     obstacleTimerUpdate();
     obstacleMove();
+
+    updateClouds();
 
     updateDifficulty();
 }
@@ -188,6 +206,39 @@ function obstacleMove() {
     }
 }
 
+function updateClouds() {
+    cloudTimer++;
+    if (cloudTimer >= cloudInterval) {
+        spawnCloud();
+        cloudTimer = 0;
+        cloudInterval = randInt(60, 140); // spawn non regolare
+    }
+
+    for (let i = clouds.length - 1; i >= 0; i--) {
+        clouds[i].x -= clouds[i].speed;   // stesso senso degli ostacoli
+        if (clouds[i].x + clouds[i].w < 0) {
+            clouds.splice(i, 1);
+        }
+    }
+}
+
+function spawnCloud() {
+    const size = randInt(35, 90);         // “diametro” base
+    const yMax = Math.floor(canvas.height * cloudMaxYRatio);
+    const y = randInt(cloudMinY, Math.max(cloudMinY + 1, yMax));
+    const speed = randFloat(0.6, 2.0);    // velocità diversa per nuvola
+    const alpha = randFloat(0.35, 0.75);  // trasparenza diversa
+
+    clouds.push({
+        x: canvas.width + size + randInt(0, 80),
+        y,
+        w: size * randFloat(1.4, 2.2),
+        h: size * randFloat(0.6, 0.95),
+        speed,
+        alpha
+    });
+}
+
 function callGameOver() {
     gameOver = true;
 }
@@ -230,6 +281,7 @@ function draw() {
     drawGround();
     drawPlayer();
     drawObstacles();
+    drawClouds();
     drawScore();
 
     if (isPaused && !gameOver) drawPauseOverlay();
@@ -238,16 +290,20 @@ function draw() {
 
 function drawGround() {
 
-    ctx.fillStyle = "#3fa34d";
+    ctx.fillStyle = "#2f7d32";
     ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+
+    ctx.fillStyle = "#4caf50";
+    ctx.fillRect(0, GROUND_Y, canvas.width, 12);
 
     ctx.beginPath();
     ctx.moveTo(0, GROUND_Y);
     ctx.lineTo(canvas.width, GROUND_Y);
-    ctx.strokeStyle = "#2f6f3a";
+    ctx.strokeStyle = "#1e5a22";
     ctx.lineWidth = 2;
     ctx.stroke();
 }
+
 function drawPlayer() {
     let currentSprite = null;
 
@@ -276,6 +332,23 @@ function drawObstacles() {
             ctx.fillStyle = "#ff0000ff";
             ctx.fillRect(ob.x, ob.y, ob.w, ob.h);
         }
+    });
+}
+
+function drawClouds() {
+    clouds.forEach(c => {
+        ctx.save();
+        ctx.globalAlpha = c.alpha;
+        ctx.fillStyle = "#ffffff";
+
+        ctx.beginPath();
+        ctx.ellipse(c.x, c.y, c.w * 0.22, c.h * 0.30, 0, 0, Math.PI * 2);
+        ctx.ellipse(c.x + c.w * 0.22, c.y - c.h * 0.18, c.w * 0.24, c.h * 0.34, 0, 0, Math.PI * 2);
+        ctx.ellipse(c.x + c.w * 0.48, c.y - c.h * 0.05, c.w * 0.28, c.h * 0.36, 0, 0, Math.PI * 2);
+        ctx.ellipse(c.x + c.w * 0.72, c.y, c.w * 0.22, c.h * 0.28, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
     });
 }
 
