@@ -211,11 +211,11 @@ function updateClouds() {
     if (cloudTimer >= cloudInterval) {
         spawnCloud();
         cloudTimer = 0;
-        cloudInterval = randInt(60, 140); // spawn non regolare
+        cloudInterval = randInt(60, 140);
     }
 
     for (let i = clouds.length - 1; i >= 0; i--) {
-        clouds[i].x -= clouds[i].speed;   // stesso senso degli ostacoli
+        clouds[i].x -= clouds[i].speed;
         if (clouds[i].x + clouds[i].w < 0) {
             clouds.splice(i, 1);
         }
@@ -223,12 +223,11 @@ function updateClouds() {
 }
 
 function spawnCloud() {
-    const size = randInt(35, 90);         // “diametro” base
+    const size = randInt(35, 90);         // base diameter
     const yMax = Math.floor(canvas.height * cloudMaxYRatio);
     const y = randInt(cloudMinY, Math.max(cloudMinY + 1, yMax));
-    const speed = randFloat(0.6, 2.0);    // velocità diversa per nuvola
-    const alpha = randFloat(0.35, 0.75);  // trasparenza diversa
-
+    const speed = randFloat(0.6, 2.0);    // different speed for each cloud
+    const alpha = randFloat(0.35, 0.75);  // different transparency
     clouds.push({
         x: canvas.width + size + randInt(0, 80),
         y,
@@ -440,3 +439,4 @@ window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
     loop();
 })();
+
