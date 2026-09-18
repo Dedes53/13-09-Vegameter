@@ -9,6 +9,7 @@ const JUMP_FORCE = -18;
 // GAME
 let gameSpeed = 6;
 let score = 0;
+let difficulty = 1;
 let gameOver = false;
 let isPaused = false;
 let obstacleTimer = 0;
@@ -20,7 +21,7 @@ let obstMaxInterval = 120;  // frame
 const player = {
     x: 80,
     y: GROUND_Y - 100,
-    w: 72,
+    w: 60,
     h: 100,
     vy: 0,
     grounded: true,
@@ -252,8 +253,11 @@ function rectsCollide(a, b) {
 }
 
 function updateDifficulty() {
+    difficulty += 0.000001;
     score += 0.1;
-    gameSpeed += score / 100000;
+    console.log(difficulty);
+    gameSpeed += difficulty * 0.0015;
+    obstacleInterval /= difficulty * 1.0005;
 }
 
 
@@ -439,4 +443,7 @@ window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
     loop();
 })();
+
+
+
 
